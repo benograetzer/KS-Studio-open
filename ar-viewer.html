@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KS Studio AR Viewer</title>
+  <link rel="stylesheet" href="css/ar-viewer.css">
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+</head>
+<body>
+  <header class="viewer-header">
+    <a class="back-link" href="index.html" aria-label="Zur Startseite">KS Studio</a>
+    <div>
+      <p class="eyebrow">AR / 3D Viewer</p>
+      <h1 id="viewerTitle">KS Studio AR Viewer</h1>
+    </div>
+  </header>
+
+  <main class="viewer-shell">
+    <section class="viewer-stage" aria-live="polite">
+      <div id="emptyState" class="message-panel">
+        <h2>Kein Modell angegeben</h2>
+        <p>
+          Bitte lade ein oeffentliches GLB-Modell ueber den URL-Parameter
+          <code>model</code>, zum Beispiel:
+        </p>
+        <code class="url-example">ar-viewer.html?model=exports/test.glb</code>
+      </div>
+
+      <model-viewer
+        id="modelViewer"
+        class="model-viewer"
+        alt="3D-Modell im KS Studio AR Viewer"
+        camera-controls
+        ar
+        ar-modes="webxr scene-viewer quick-look"
+        shadow-intensity="1"
+        exposure="1"
+        auto-rotate>
+        <button id="arButton" class="ar-button" slot="ar-button" type="button">
+          AR starten
+        </button>
+      </model-viewer>
+    </section>
+
+    <aside class="hint-panel" aria-live="polite">
+      <h2>Hinweis</h2>
+      <p id="modelInfo">Noch kein Modell geladen.</p>
+      <p id="iosInfo">iPhone/iPad AR benötigt idealerweise eine USDZ-Datei.</p>
+      <p id="errorInfo" class="error-text" hidden>Das Modell konnte nicht geladen werden. Bitte pruefe Pfad und Dateiname.</p>
+    </aside>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const modelPath = params.get('model');
+    const iosPath = params.get('ios');
+    const displayTitle = params.get('title');
+
+    const viewer = document.getElementById('modelViewer');
+    const viewerTitle = document.getElementById('viewerTitle');
+    const emptyState = document.getElementById('emptyState');
+    const modelInfo = document.getElementById('modelInfo');
+    const iosInfo = document.getElementById('iosInfo');
+    const errorInfo = document.getElementById('errorInfo');
+
+    if (displayTitle) {
+      viewerTitle.textContent = displayTitle;
+      document.title = `${displayTitle} | KS Studio AR Viewer`;
+    }
+
+    if (modelPath) {
+      emptyState.hidden = true;
+      viewer.hidden = false;
+      viewer.src = modelPath;
+      modelInfo.textContent = `Geladenes Modell: ${modelPath}`;
+
+      if (iosPath) {
+        viewer.setAttribute('ios-src', iosPath);
+        iosInfo.textContent = `iPhone/iPad Quick Look: ${iosPath}`;
+      }
+    } else {
+      viewer.hidden = true;
+    }
+
+    viewer.addEventListener('load', () => {
+      errorInfo.hidden = true;
+    });
+
+    viewer.addEventListener('error', () => {
+      errorInfo.hidden = false;
+    });
+  </script>
+</body>
+</html>

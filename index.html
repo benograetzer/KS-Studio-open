@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KS Studio AR Viewer</title>
+  <link rel="stylesheet" href="css/ar-viewer.css">
+</head>
+<body class="start-page">
+  <main class="start-shell">
+    <section class="start-panel" aria-labelledby="page-title">
+      <p class="eyebrow">GitHub Pages</p>
+      <h1 id="page-title">KS Studio AR Viewer</h1>
+      <p class="lead">
+        Dieses Repository hostet ausschliesslich oeffentliche AR- und 3D-Modelle
+        fuer die Anzeige im Browser. Es enthaelt keine internen Konfigurator-,
+        Preis-, ERP-, Kunden- oder Projektdaten.
+      </p>
+
+      <div class="actions">
+        <a class="primary-link" href="ar-viewer.html">AR-Viewer oeffnen</a>
+      </div>
+
+      <div class="info-box">
+        <h2>Modelle per URL laden</h2>
+        <p>GLB-Dateien werden ueber den Parameter <code>model</code> geladen:</p>
+        <code class="url-example">ar-viewer.html?model=exports/dateiname.glb</code>
+        <p>Optional kann fuer iPhone/iPad Quick Look eine USDZ-Datei ergaenzt werden:</p>
+        <code class="url-example">ar-viewer.html?model=exports/test.glb&amp;ios=exports/test.usdz</code>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
