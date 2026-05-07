@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>KS Studio AR Viewer</title>
   <link rel="stylesheet" href="css/ar-viewer.css">
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.1.0/dist/model-viewer.min.js"></script>
 </head>
 <body>
   <header class="viewer-header">
@@ -19,8 +19,8 @@
   <main class="viewer-shell">
     <section class="viewer-stage" aria-live="polite">
       <div id="emptyState" class="message-panel">
-        <h2>Kein Modell angegeben</h2>
-        <p>
+        <h2 id="emptyStateTitle">Kein Modell angegeben</h2>
+        <p id="emptyStateMessage">
           Bitte lade ein oeffentliches GLB-Modell ueber den URL-Parameter
           <code>model</code>, zum Beispiel:
         </p>
@@ -31,11 +31,17 @@
         id="modelViewer"
         class="model-viewer"
         alt="3D-Modell im KS Studio AR Viewer"
-        camera-controls
+        hidden
         ar
         ar-modes="webxr scene-viewer quick-look"
-        shadow-intensity="1"
+        ar-placement="floor"
+        camera-controls
+        environment-image="neutral"
+        shadow-intensity="0.8"
+        shadow-softness="0.7"
         exposure="1"
+        interaction-prompt="auto"
+        touch-action="pan-y"
         auto-rotate>
         <button id="arButton" class="ar-button" slot="ar-button" type="button">
           AR starten
@@ -44,51 +50,152 @@
     </section>
 
     <aside class="hint-panel" aria-live="polite">
-      <h2>Hinweis</h2>
-      <p id="modelInfo">Noch kein Modell geladen.</p>
+      <h2>Status</h2>
+      <p id="statusInfo">Noch kein Modell geladen.</p>
+      <p id="modelInfo" hidden></p>
       <p id="iosInfo">iPhone/iPad AR benötigt idealerweise eine USDZ-Datei.</p>
-      <p id="errorInfo" class="error-text" hidden>Das Modell konnte nicht geladen werden. Bitte pruefe Pfad und Dateiname.</p>
+      <div id="downloadPanel" class="download-panel" hidden>
+        <a id="glbDownload" class="download-link" href="" download>GLB herunterladen</a>
+        <a id="usdzDownload" class="download-link" href="" download hidden>USDZ herunterladen</a>
+      </div>
     </aside>
   </main>
 
   <script>
+    const DEFAULT_TITLE = 'KS Studio AR Viewer';
+    const LOAD_STATUS = 'Modell wird geladen...';
+    const READY_STATUS = 'Modell geladen. Auf kompatiblen Geräten kann AR gestartet werden.';
+    const ERROR_STATUS = 'Laden fehlgeschlagen. Wurde die Datei nach exports/ kopiert und gepusht?';
+
     const params = new URLSearchParams(window.location.search);
-    const modelPath = params.get('model');
-    const iosPath = params.get('ios');
+    const rawModelPath = params.get('model');
+    const rawIosPath = params.get('ios');
     const displayTitle = params.get('title');
 
     const viewer = document.getElementById('modelViewer');
     const viewerTitle = document.getElementById('viewerTitle');
     const emptyState = document.getElementById('emptyState');
+    const emptyStateTitle = document.getElementById('emptyStateTitle');
+    const emptyStateMessage = document.getElementById('emptyStateMessage');
+    const statusInfo = document.getElementById('statusInfo');
     const modelInfo = document.getElementById('modelInfo');
     const iosInfo = document.getElementById('iosInfo');
-    const errorInfo = document.getElementById('errorInfo');
+    const downloadPanel = document.getElementById('downloadPanel');
+    const glbDownload = document.getElementById('glbDownload');
+    const usdzDownload = document.getElementById('usdzDownload');
 
-    if (displayTitle) {
-      viewerTitle.textContent = displayTitle;
-      document.title = `${displayTitle} | KS Studio AR Viewer`;
+    function cleanTitle(value) {
+      if (!value) {
+        return DEFAULT_TITLE;
+      }
+
+      const clean = value
+        .replace(/[\u0000-\u001f\u007f]+/g, ' ')
+        .replace(/[<>]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!clean) {
+        return DEFAULT_TITLE;
+      }
+
+      return Array.from(clean).slice(0, 80).join('');
     }
 
-    if (modelPath) {
+    function normalizeRepoPath(value) {
+      if (!value) {
+        return null;
+      }
+
+      const trimmed = value.trim();
+
+      if (!trimmed) {
+        return null;
+      }
+
+      if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed) || trimmed.startsWith('//')) {
+        return null;
+      }
+
+      const normalized = trimmed
+        .replace(/\\/g, '/')
+        .replace(/\/{2,}/g, '/');
+
+      if (
+        normalized.startsWith('/') ||
+        normalized.includes(':') ||
+        normalized.includes('?') ||
+        normalized.includes('#')
+      ) {
+        return null;
+      }
+
+      const segments = normalized.split('/').filter(Boolean);
+
+      if (!segments.length || segments.includes('..')) {
+        return null;
+      }
+
+      return segments.join('/');
+    }
+
+    function fileNameFromPath(path) {
+      return path.split('/').pop() || path;
+    }
+
+    function showInvalidModel() {
+      viewer.hidden = true;
+      emptyState.hidden = false;
+      emptyStateTitle.textContent = 'Ungueltiger Modellpfad';
+      emptyStateMessage.textContent = 'Erlaubt sind nur relative Pfade im Repository, ohne externe URLs, absolute Pfade oder ..-Segmente.';
+      statusInfo.textContent = 'Ungueltiger Modellpfad. Bitte einen relativen Pfad wie exports/test.glb verwenden.';
+      statusInfo.classList.add('error-text');
+    }
+
+    const pageTitle = cleanTitle(displayTitle);
+    const modelPath = normalizeRepoPath(rawModelPath);
+    const iosPath = normalizeRepoPath(rawIosPath);
+
+    viewerTitle.textContent = pageTitle;
+    document.title = pageTitle;
+
+    if (rawModelPath && modelPath) {
       emptyState.hidden = true;
       viewer.hidden = false;
-      viewer.src = modelPath;
+      viewer.setAttribute('src', modelPath);
       modelInfo.textContent = `Geladenes Modell: ${modelPath}`;
+      modelInfo.hidden = false;
+      statusInfo.textContent = LOAD_STATUS;
+      statusInfo.classList.remove('error-text');
+      glbDownload.href = modelPath;
+      glbDownload.setAttribute('download', fileNameFromPath(modelPath));
+      downloadPanel.hidden = false;
 
-      if (iosPath) {
+      if (rawIosPath && iosPath) {
         viewer.setAttribute('ios-src', iosPath);
         iosInfo.textContent = `iPhone/iPad Quick Look: ${iosPath}`;
+        usdzDownload.href = iosPath;
+        usdzDownload.setAttribute('download', fileNameFromPath(iosPath));
+        usdzDownload.hidden = false;
+      } else if (rawIosPath && !iosPath) {
+        iosInfo.textContent = 'Ungueltiger USDZ-Pfad wurde ignoriert. iPhone/iPad braucht fuer native AR idealerweise eine USDZ-Datei.';
+      } else {
+        iosInfo.textContent = 'iPhone/iPad braucht fuer native AR idealerweise eine USDZ-Datei.';
       }
+    } else if (rawModelPath && !modelPath) {
+      showInvalidModel();
     } else {
       viewer.hidden = true;
     }
 
     viewer.addEventListener('load', () => {
-      errorInfo.hidden = true;
+      statusInfo.textContent = READY_STATUS;
+      statusInfo.classList.remove('error-text');
     });
 
     viewer.addEventListener('error', () => {
-      errorInfo.hidden = false;
+      statusInfo.textContent = ERROR_STATUS;
+      statusInfo.classList.add('error-text');
     });
   </script>
 </body>

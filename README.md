@@ -1,4 +1,4 @@
-# KS Studio AR Viewer
+# KS-Studio-open
 
 Dieses Repository ist eine reine oeffentliche Ablage fuer AR- und 3D-Modelle,
 die direkt ueber GitHub Pages ausgeliefert werden. Es enthaelt nur statische
@@ -19,7 +19,7 @@ Projektinformationen in dieses Repository hochladen.
 ## Dateistruktur
 
 ```text
-KS-Studio_open/
+KS-Studio-open/
 ├─ index.html
 ├─ ar-viewer.html
 ├─ css/
@@ -42,23 +42,32 @@ erhalten bleibt.
 
 ## Viewer-URLs
 
+Basis-URL:
+
+```text
+https://benograetzer.github.io/KS-Studio-open/
+```
+
 GLB-Datei laden:
 
 ```text
-https://BENUTZERNAME.github.io/KS-Studio_open/ar-viewer.html?model=exports/test.glb
+https://benograetzer.github.io/KS-Studio-open/ar-viewer.html?model=exports/ks-studio-YYYY-MM-DD-HHMM.glb
 ```
 
 GLB-Datei mit USDZ fuer iPhone/iPad Quick Look laden:
 
 ```text
-https://BENUTZERNAME.github.io/KS-Studio_open/ar-viewer.html?model=exports/test.glb&ios=exports/test.usdz
+https://benograetzer.github.io/KS-Studio-open/ar-viewer.html?model=exports/test.glb&ios=exports/test.usdz
 ```
 
 Optional kann ein Anzeigename gesetzt werden:
 
 ```text
-https://BENUTZERNAME.github.io/KS-Studio_open/ar-viewer.html?model=exports/test.glb&ios=exports/test.usdz&title=H3000-Test
+https://benograetzer.github.io/KS-Studio-open/ar-viewer.html?model=exports/test.glb&ios=exports/test.usdz&title=KS%20Studio%20Test
 ```
+
+Nur relative Repo-Pfade sind erlaubt, zum Beispiel `exports/test.glb`.
+Externe URLs, absolute Pfade und `..`-Segmente werden vom Viewer abgelehnt.
 
 ## Sicherheitsregel
 
